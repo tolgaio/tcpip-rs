@@ -1,10 +1,10 @@
-use super::types;
+use super::types::ICMPType;
 use bitreader::BitReader;
 use std::fmt;
 
 #[derive(Debug)]
 pub struct ICMP6 {
-    pub typ: Option<types::ICMPType>,
+    pub typ: Option<ICMPType>,
     pub code: u8,
     pub checksum: u16,
     pub payload: Vec<u8>,
@@ -24,7 +24,10 @@ impl ICMP6 {
 
     fn parse(&mut self, buf: &[u8]) {
         let mut bit_reader = BitReader::new(buf);
-        self.typ = types::to_icmp_type(bit_reader.read_u8(8).unwrap());
+        self.typ = match ICMPType::from(bit_reader.read_u8(8).unwrap()) {
+            ICMPType::Unknown => None,
+            t => Some(t),
+        };
         self.code = bit_reader.read_u8(8).unwrap();
         self.checksum = bit_reader.read_u16(16).unwrap();
         self.payload = buf[8..].iter().cloned().collect();
@@ -34,7 +37,7 @@ impl ICMP6 {
 impl fmt::Display for ICMP6 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let typ = match &self.typ {
-            Some(types::ICMPType::RouterSolicitation) => "router solicitation".to_string(),
+            Some(ICMPType::RouterSolicitation) => "router solicitation".to_string(),
             Some(_) => "NotImplemented".to_string(),
             None => "UnknownType".to_string(),
         };
@@ -44,7 +47,7 @@ impl fmt::Display for ICMP6 {
 
 #[cfg(test)]
 mod tests {
-    use super::types;
+    use crate::icmp::types;
     #[test]
     fn parse_icmp6() {
         let data: Vec<u8> = vec![133, 0, 114, 186, 0, 0, 0, 0];

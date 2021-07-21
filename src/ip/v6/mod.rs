@@ -1,6 +1,6 @@
 pub mod address;
 
-use super::protocol::{to_ip_protocol, IpProtocol};
+use super::protocol::IpProtocol;
 use address::IP6Address;
 use bitreader::BitReader;
 use std::fmt;
@@ -68,7 +68,10 @@ impl IP6 {
         self.ecn = bit_reader.read_u8(2).unwrap();
         self.flow_label = bit_reader.read_u32(20).unwrap();
         self.payload_length = bit_reader.read_u16(16).unwrap();
-        self.next_header = to_ip_protocol(bit_reader.read_u8(8).unwrap());
+        self.next_header = match IpProtocol::from(bit_reader.read_u8(8).unwrap()) {
+            IpProtocol::Unknown => None,
+            p => Some(p),
+        };
         self.hop_limit = bit_reader.read_u8(8).unwrap();
 
         // parse ip6Address source ip
