@@ -1,6 +1,6 @@
 pub mod address;
 
-use super::protocol::IpProtocol;
+use super::protocol::{to_ip_protocol, IpProtocol};
 use address::IP6Address;
 use bitreader::BitReader;
 use std::fmt;
@@ -30,10 +30,11 @@ impl fmt::Display for IP6 {
             Some(d) => format!("{}", d),
         };
         let protocol = match &self.next_header {
-            Some(IpProtocol::TCP) => "tcp".to_string(),
-            Some(IpProtocol::UDP) => "udp".to_string(),
-            Some(IpProtocol::ICMP) => "icmp".to_string(),
-            Some(IpProtocol::IPV6ICMP) => "ip6-icmp".to_string(),
+            Some(IpProtocol::Tcp) => "tcp".to_string(),
+            Some(IpProtocol::Udp) => "udp".to_string(),
+            Some(IpProtocol::Icmp) => "icmp".to_string(),
+            Some(IpProtocol::Ipv6Icmp) => "ip6-icmp".to_string(),
+            Some(_) => "NotImplemented".to_string(),
             None => "UnknownProtocol".to_string(),
         };
         write!(
@@ -67,13 +68,7 @@ impl IP6 {
         self.ecn = bit_reader.read_u8(2).unwrap();
         self.flow_label = bit_reader.read_u32(20).unwrap();
         self.payload_length = bit_reader.read_u16(16).unwrap();
-        self.next_header = match bit_reader.read_u8(8).unwrap() {
-            1 => Some(IpProtocol::ICMP),
-            6 => Some(IpProtocol::TCP),
-            17 => Some(IpProtocol::UDP),
-            58 => Some(IpProtocol::IPV6ICMP),
-            _ => None,
-        };
+        self.next_header = to_ip_protocol(bit_reader.read_u8(8).unwrap());
         self.hop_limit = bit_reader.read_u8(8).unwrap();
 
         // parse ip6Address source ip

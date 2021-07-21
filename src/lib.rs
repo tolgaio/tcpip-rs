@@ -1,5 +1,6 @@
 use bitreader::BitReader;
 
+mod icmp;
 mod ip;
 
 use ip::v6::IP6;
