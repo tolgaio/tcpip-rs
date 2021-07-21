@@ -1,5 +1,6 @@
 pub mod address;
 
+use super::protocol::IpProtocol;
 use address::IP6Address;
 use bitreader::BitReader;
 use std::fmt;
@@ -11,7 +12,7 @@ pub struct IP6 {
     ecn: u8,
     flow_label: u32,
     payload_length: u16,
-    next_header: u8,
+    next_header: Option<IpProtocol>,
     hop_limit: u8,
     source: Option<IP6Address>,
     dest: Option<IP6Address>,
@@ -28,11 +29,17 @@ impl fmt::Display for IP6 {
             None => "No dest".to_string(),
             Some(d) => format!("{}", d),
         };
-
+        let protocol = match &self.next_header {
+            Some(IpProtocol::TCP) => "tcp".to_string(),
+            Some(IpProtocol::UDP) => "udp".to_string(),
+            Some(IpProtocol::ICMP) => "icmp".to_string(),
+            Some(IpProtocol::IPV6ICMP) => "ip6-icmp".to_string(),
+            None => "UnknownProtocol".to_string(),
+        };
         write!(
             f,
-            "IP6 > SOURCE: {} DESTINATION: {}: <TYPE>, <CODE>, length 8",
-            source, dest
+            "IP6 > SOURCE: {} DESTINATION: {}: PROTOCOL: {}",
+            source, dest, protocol
         )
     }
 }
@@ -44,7 +51,7 @@ impl IP6 {
             ecn: 0,
             flow_label: 0,
             payload_length: 0,
-            next_header: 0,
+            next_header: None,
             hop_limit: 0,
             source: None,
             dest: None,
@@ -60,7 +67,13 @@ impl IP6 {
         self.ecn = bit_reader.read_u8(2).unwrap();
         self.flow_label = bit_reader.read_u32(20).unwrap();
         self.payload_length = bit_reader.read_u16(16).unwrap();
-        self.next_header = bit_reader.read_u8(8).unwrap();
+        self.next_header = match bit_reader.read_u8(8).unwrap() {
+            1 => Some(IpProtocol::ICMP),
+            6 => Some(IpProtocol::TCP),
+            17 => Some(IpProtocol::UDP),
+            58 => Some(IpProtocol::IPV6ICMP),
+            _ => None,
+        };
         self.hop_limit = bit_reader.read_u8(8).unwrap();
 
         // parse ip6Address source ip
