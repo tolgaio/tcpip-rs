@@ -52,7 +52,6 @@ mod tests {
     fn parse_icmp6() {
         let data: Vec<u8> = vec![133, 0, 114, 186, 0, 0, 0, 0];
         let icmp6 = super::ICMP6::new(&data);
-        println!("{}", icmp6);
         assert_eq!(icmp6.typ, Some(types::ICMPType::RouterSolicitation));
     }
 }
