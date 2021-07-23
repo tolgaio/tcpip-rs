@@ -1,7 +1,7 @@
 // Defines Enum struct that reflects the IP Payload Protocols
 // https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[allow(dead_code)]
 pub enum IpProtocol {
     Hopopt = 0,

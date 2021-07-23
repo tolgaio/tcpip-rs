@@ -5,13 +5,15 @@ mod icmp;
 mod ip;
 
 use ip::v6::IP6;
+use ip::IP;
 
-pub fn parse(buffer: &[u8]) -> Result<(), error::IPError> {
+pub fn parse(buffer: &[u8]) -> Result<IP, error::IPError> {
     if buffer.len() < 21 {
         // 20 bytes for the header, and 1 byte of data
         return Err(error::IPError::NotEnoughBytes(buffer.len() as u8));
     }
-    if buffer.len() > 65_535 {
+    // the maximum length of a IP packet is 16bit
+    if buffer.len() > u16::MAX as usize {
         return Err(error::IPError::TooManyBytes(buffer.len() as u32));
     }
 
@@ -21,12 +23,12 @@ pub fn parse(buffer: &[u8]) -> Result<(), error::IPError> {
     match ip_version {
         4 => {
             println!("ipv4 is detected");
-            Ok(())
+            Ok(IP::V6(IP6::new()))
         }
         6 => {
             let mut ip6: IP6 = IP6::new();
             ip6.parse(&buffer);
-            Ok(())
+            Ok(IP::V6(ip6))
         }
         v => Err(error::IPError::InvalidVersion(v)),
     }
@@ -35,6 +37,7 @@ pub fn parse(buffer: &[u8]) -> Result<(), error::IPError> {
 #[cfg(test)]
 mod tests {
     use super::error;
+    use super::ip::IP;
     use super::parse;
 
     #[test]
@@ -60,7 +63,7 @@ mod tests {
         let mut payload: Vec<u8> = Vec::with_capacity(data.len() + zeros.len());
         payload.extend_from_slice(&data);
         payload.extend_from_slice(&zeros);
-        assert_eq!(Ok(()), parse(&payload));
+        assert!(matches!(parse(&payload), Ok(IP::V6 { .. })));
     }
 
     #[test]

@@ -6,7 +6,7 @@ use bitreader::BitReader;
 use std::fmt;
 use std::vec::Vec;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct IP6 {
     ds: u8,
     ecn: u8,
@@ -17,32 +17,6 @@ pub struct IP6 {
     source: Option<IP6Address>,
     dest: Option<IP6Address>,
     payload: Vec<u8>,
-}
-
-impl fmt::Display for IP6 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let source = match &self.source {
-            None => "No source".to_string(),
-            Some(s) => format!("{}", s),
-        };
-        let dest = match &self.dest {
-            None => "No dest".to_string(),
-            Some(d) => format!("{}", d),
-        };
-        let protocol = match &self.next_header {
-            Some(IpProtocol::Tcp) => "tcp".to_string(),
-            Some(IpProtocol::Udp) => "udp".to_string(),
-            Some(IpProtocol::Icmp) => "icmp".to_string(),
-            Some(IpProtocol::Ipv6Icmp) => "ip6-icmp".to_string(),
-            Some(_) => "NotImplemented".to_string(),
-            None => "UnknownProtocol".to_string(),
-        };
-        write!(
-            f,
-            "IP6 > SOURCE: {} DESTINATION: {}: PROTOCOL: {}",
-            source, dest, protocol
-        )
-    }
 }
 
 impl IP6 {
@@ -89,5 +63,31 @@ impl IP6 {
         self.source = Some(source);
         self.dest = Some(dest);
         self.payload = buf[40..].iter().cloned().collect();
+    }
+}
+
+impl fmt::Display for IP6 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let source = match &self.source {
+            None => "No source".to_string(),
+            Some(s) => format!("{}", s),
+        };
+        let dest = match &self.dest {
+            None => "No dest".to_string(),
+            Some(d) => format!("{}", d),
+        };
+        let protocol = match &self.next_header {
+            Some(IpProtocol::Tcp) => "tcp".to_string(),
+            Some(IpProtocol::Udp) => "udp".to_string(),
+            Some(IpProtocol::Icmp) => "icmp".to_string(),
+            Some(IpProtocol::Ipv6Icmp) => "ip6-icmp".to_string(),
+            Some(_) => "NotImplemented".to_string(),
+            None => "UnknownProtocol".to_string(),
+        };
+        write!(
+            f,
+            "IP6 > SOURCE: {} DESTINATION: {}: PROTOCOL: {}",
+            source, dest, protocol
+        )
     }
 }
